@@ -1,4 +1,3 @@
-# comment
 import re
 import boto3
 import json
