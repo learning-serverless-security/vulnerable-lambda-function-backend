@@ -1,50 +1,12 @@
 import re
 import boto3
 import json
-import ast
-import operator
-from os import environ
 
+from os import environ
 get_env = environ.get
 
 HARDCODED_KEY_01 = "ABCDE"
 HARDCODED_KEY_02 = "FGHIJ"
-
-operators = {
-    ast.Add: operator.add,
-    ast.Sub: operator.sub,
-    ast.Mult: operator.mul,
-    ast.Div: operator.truediv,
-    ast.Pow: operator.pow,
-    ast.Mod: operator.mod,
-    ast.USub: operator.neg,
-}
-
-
-def eval_expr(expr):
-    def _eval(node):
-        if isinstance(node, ast.Num):
-            return node.n
-        elif isinstance(node, ast.Constant):
-            return node.value
-        elif isinstance(node, ast.BinOp):
-            return operators[type(node.op)](_eval(node.left), _eval(node.right))
-        elif isinstance(node, ast.UnaryOp):
-            return operators[type(node.op)](_eval(node.operand))
-        else:
-            raise TypeError(f"Unsupported expression: {type(node).__name__}")
-    
-    try:
-        tree = ast.parse(expr, mode='eval')
-        return _eval(tree.body)
-    except Exception:
-        return "Invalid or unsafe expression"
-
-
-def process_statement(statement):
-    if not statement:
-        return "No statement parameter value provided"
-    return eval_expr(statement)
 
 
 def get_secret(secret_name, region_name="us-east-1"):
@@ -59,6 +21,19 @@ def get_statement(event):
     statement = params.get('statement', None)
     
     return statement
+
+
+def process_statement(statement):
+    output = "No statement parameter value provided"
+    
+    if statement:
+        output = eval(statement)
+    
+    return output
+
+
+def sanitize_output(output):
+    return re.sub(r'[^0-9\.]', '', str(output))
 
 
 def lambda_handler(event, context):
@@ -76,10 +51,5 @@ def lambda_handler(event, context):
     
     return {
         'statusCode': 200,
-        'headers': {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET,OPTIONS",
-            "Access-Control-Allow-Headers": "*"
-        },
-        'body': result
+        'body': sanitize_output(result)
     }
