@@ -33,7 +33,7 @@ def process_statement(statement):
 
 
 def sanitize_output(output):
-    return re.sub(r'[^0-9\.]', '', str(output))
+    return re.sub(r'[^-0-9\.]', '', str(output))
 
 
 def lambda_handler(event, context):
